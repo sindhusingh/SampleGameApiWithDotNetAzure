@@ -4,12 +4,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using SampleGameApiWithDotNetAzure.Data;
-using SampleGameApiWithDotNetAzure.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddControllers(); // Enables attribute-based API controllers
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -44,15 +43,14 @@ builder.Services.AddSwaggerGen();
 //
 // ---------------------------------------------------------------
 
-
 builder.Services.AddRateLimiter(options =>
 {
     options.AddFixedWindowLimiter("fixed", limiterOptions =>
     {
-        limiterOptions.PermitLimit = 5; // max 5 requests
-        limiterOptions.Window = TimeSpan.FromSeconds(10); // every 10 seconds
+        limiterOptions.PermitLimit = 5; // Max 5 requests per window
+        limiterOptions.Window = TimeSpan.FromSeconds(10); // 10-second window
         limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        limiterOptions.QueueLimit = 2; // allow 2 requests to queue
+        limiterOptions.QueueLimit = 2; // Queue 2 extra requests
     });
 });
 
@@ -66,41 +64,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseRateLimiter();
+app.UseRateLimiter();       // Enables global rate limiting
+app.UseAuthorization();     // Ready for future JWT/Auth use
 
-
-// ✅ Sample POST endpoint for Unity game score submission
-app.MapPost("/submit-score", (PlayerScoreDto submission) =>
-{
-    //// For now, just echo back what was submitted.
-    //return Results.Ok(new
-    //{
-    //    Message = $"Score received for {submission.PlayerId} with score {submission.Score}",
-    //    ReceivedAt = DateTime.UtcNow
-    //});
-
-
-    //var playerScore = new PlayerScoreDto
-    //{
-    //    PlayerId = submission.PlayerId,
-    //    Score = submission.Score
-    //};
-
-    FakeScoreStore.AddScore(submission);
-    return Results.Ok("Score submitted successfully");
-})
-.RequireRateLimiting("fixed")
-.WithName("SubmitScore")
-.WithOpenApi();
-
-// ✅ NEW: GET - Get Scores by PlayerId
-app.MapGet("/scores/{playerId}", (string playerId) =>
-{
-    var scores = FakeScoreStore.GetScoresByPlayerId(playerId);
-    return Results.Ok(scores);
-})
-.RequireRateLimiting("fixed")
-.WithName("GetPlayerScores")
-.WithOpenApi();
+app.MapControllers();       // Maps [ApiController] routes from controller files
 
 app.Run();

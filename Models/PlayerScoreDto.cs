@@ -1,8 +1,17 @@
-﻿namespace SampleGameApiWithDotNetAzure.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace SampleGameApiWithDotNetAzure.Models
 {
+    // DTO: Data Transfer Object for Player Score submission
+    // [Required] ensures the field is not null during model binding.
+    // [StringLength] prevents empty strings and limits the length to 100 characters.
+
     public class PlayerScoreDto
     {
+        [Required(ErrorMessage = "PlayerId is required.")]
+        [StringLength(100, MinimumLength = 1, ErrorMessage = "PlayerId cannot be empty.")]
         public string PlayerId { get; set; }
+
         public int Score { get; set; }
     }
 }
