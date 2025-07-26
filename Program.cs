@@ -69,4 +69,15 @@ app.UseAuthorization();     // Ready for future JWT/Auth use
 
 app.MapControllers();       // Maps [ApiController] routes from controller files
 
+// Fallback route for unmatched requests
+app.MapFallback(() =>
+{
+    return Results.NotFound(new
+    {
+        error = "The requested endpoint does not exist.",
+        hint = "Check your URL or refer to /swagger for available APIs."
+    });
+});
+
+
 app.Run();
