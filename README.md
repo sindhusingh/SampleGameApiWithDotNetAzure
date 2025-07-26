@@ -66,7 +66,45 @@ Request Body:
 }
 ```
 
+✅ Get All Player Scores
+**GET** `/scores`
+Endpoint: GET /scores
+Response:
+
+```json
+
+[
+  {
+    "playerId": "player123",
+    "score": 100
+  },
+  ...
+]
+```
+
 ---
+
+## 🔧 Running the API
+
+**Option 1: Manual run**
+
+`dotnet run`
+
+Rebuilds and runs the project.
+
+Must re-run manually after each code change.
+
+Option 2: Auto-reload with file changes
+
+`dotnet watch run`
+
+Watches files and automatically restarts the app when code is changed.
+
+Recommended during development!
+
+---
+
+
 
 ## 🛡️ Coming Soon
 

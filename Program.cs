@@ -1,6 +1,10 @@
+using System;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.RateLimiting;
-
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using SampleGameApiWithDotNetAzure.Data;
 using SampleGameApiWithDotNetAzure.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -66,17 +70,37 @@ app.UseRateLimiter();
 
 
 // ✅ Sample POST endpoint for Unity game score submission
-app.MapPost("/submit-score", (ScoreSubmission submission) =>
+app.MapPost("/submit-score", (PlayerScoreDto submission) =>
 {
-    // For now, just echo back what was submitted.
-    return Results.Ok(new
-    {
-        Message = $"Score received for {submission.PlayerId} with score {submission.Score}",
-        ReceivedAt = DateTime.UtcNow
-    });
+    //// For now, just echo back what was submitted.
+    //return Results.Ok(new
+    //{
+    //    Message = $"Score received for {submission.PlayerId} with score {submission.Score}",
+    //    ReceivedAt = DateTime.UtcNow
+    //});
+
+
+    //var playerScore = new PlayerScoreDto
+    //{
+    //    PlayerId = submission.PlayerId,
+    //    Score = submission.Score
+    //};
+
+    FakeScoreStore.AddScore(submission);
+    return Results.Ok("Score submitted successfully");
 })
 .RequireRateLimiting("fixed")
 .WithName("SubmitScore")
+.WithOpenApi();
+
+// ✅ NEW: GET - Get Scores by PlayerId
+app.MapGet("/scores/{playerId}", (string playerId) =>
+{
+    var scores = FakeScoreStore.GetScoresByPlayerId(playerId);
+    return Results.Ok(scores);
+})
+.RequireRateLimiting("fixed")
+.WithName("GetPlayerScores")
 .WithOpenApi();
 
 app.Run();
