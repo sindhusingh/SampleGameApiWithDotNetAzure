@@ -1,0 +1,6 @@
+@SampleGameApiWithDotNetAzure_HostAddress = http://localhost:5030
+
+GET {{SampleGameApiWithDotNetAzure_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
