@@ -2,10 +2,20 @@ using System;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using SampleGameApiWithDotNetAzure.Data;
+
+
+// Load .env file
+DotNetEnv.Env.Load(); // 🔁 Must be first!
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ✅ Read from configuration or hardcode for now
+var cosmosConnectionString = builder.Configuration["CosmosDb:ConnectionString"];
+var databaseName = builder.Configuration["CosmosDb:DatabaseName"];
+var containerName = builder.Configuration["CosmosDb:ContainerName"];
 
 // Add services to the container.
 builder.Services.AddControllers(); // Enables attribute-based API controllers
@@ -54,19 +64,47 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
+// ✅ Register CosmosClient
+builder.Services.AddSingleton(s =>
+{
+    return new CosmosClient(cosmosConnectionString);
+});
+
+// ✅ Register your IPlayerRepository implementation
+builder.Services.AddSingleton<IPlayerRepository>(s =>
+{
+    var client = s.GetRequiredService<CosmosClient>();
+    return new CosmosPlayerRepository(client, databaseName, containerName);
+});
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+//// Configure the HTTP request pipeline.
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseSwagger();
+//    app.UseSwaggerUI();
+//}
+//Allow Swagger for all
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 app.UseRateLimiter();       // Enables global rate limiting
-app.UseAuthorization();     // Ready for future JWT/Auth use
+//app.UseAuthorization();     // Ready for future JWT/Auth use
+//app.UseMiddleware<PlayFabAuthMiddleware>(); //PlayFab Auth
 
 app.MapControllers();       // Maps [ApiController] routes from controller files
+
+// Fallback route for unmatched requests
+app.MapFallback(() =>
+{
+    return Results.NotFound(new
+    {
+        error = "The requested endpoint does not exist.",
+        hint = "Check your URL or refer to /swagger for available APIs."
+    });
+});
+
 
 app.Run();
